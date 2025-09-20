@@ -79,7 +79,7 @@ class LoggerSetup:
         return logging.getLogger(name)
 
 # Global logger setup instance
-_logger_setup = None
+_logger_setup: Optional[LoggerSetup] = None
 
 def setup_logging(config_path: Optional[str] = None) -> None:
     """Initialize logging configuration"""
@@ -91,6 +91,7 @@ def get_logger(name: str) -> logging.Logger:
     global _logger_setup
     if _logger_setup is None:
         setup_logging()
+    assert _logger_setup is not None  # Help type checker understand _logger_setup is not None
     return _logger_setup.get_logger(name)
 
 # Convenience function for timed operations

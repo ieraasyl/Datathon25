@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 
 # Page configuration
 st.set_page_config(
-    page_title=UI_CONSTANTS.get('title', "Social Media Analysis Dashboard"),
+    page_title=UI_CONSTANTS.get('title') or "Social Media Analysis Dashboard",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -45,7 +45,7 @@ class Dashboard:
         logger.info("Dashboard initialized")
     
     @st.cache_data(ttl=3600, show_spinner=True)
-    def load_data(_self, file_path: str = None) -> pd.DataFrame:
+    def load_data(_self, file_path: str | None = None) -> pd.DataFrame:
         """Load data with caching for performance"""
         try:
             if file_path is None:
@@ -178,7 +178,7 @@ class Dashboard:
         
         st.markdown("---")
     
-    def render_metrics(self, df: pd.DataFrame, metadata: dict = None):
+    def render_metrics(self, df: pd.DataFrame, metadata: dict | None = None):
         """Render key performance metrics"""
         if df.empty:
             st.warning("No data available for metrics")
@@ -346,7 +346,7 @@ class Dashboard:
                 "Filter by Language",
                 options=languages,
                 default=languages,
-                format_func=lambda x: lang_display.get(x, x)
+                format_func=lambda x: lang_display.get(x, x) or str(x)
             )
             if selected_languages:
                 filtered_df = filtered_df[filtered_df[COLUMNS['LANGUAGE']].isin(selected_languages)]
@@ -388,7 +388,7 @@ class Dashboard:
         text_columns = [COLUMNS['TEXT'], COLUMNS['REPLY']]
         for col in text_columns:
             if col in display_df.columns:
-                max_len = UI_CONSTANTS['MAX_TEXT_DISPLAY']
+                max_len: int = UI_CONSTANTS['MAX_TEXT_DISPLAY']  # type: ignore
                 display_df[col] = display_df[col].astype(str).apply(
                     lambda x: x[:max_len] + '...' if len(str(x)) > max_len else x
                 )
@@ -397,7 +397,7 @@ class Dashboard:
         st.dataframe(
             display_df,
             use_container_width=True,
-            height=UI_CONSTANTS['TABLE_HEIGHT']
+            height=int(UI_CONSTANTS['TABLE_HEIGHT'])  # Ensure int type
         )
     
     def render_download_buttons(self, df: pd.DataFrame):
