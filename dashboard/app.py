@@ -242,7 +242,7 @@ class Dashboard:
                     height=UI_CONSTANTS['CHART_HEIGHT']
                 )
                 fig_pie.update_traces(textposition='inside', textinfo='percent+label')
-                st.plotly_chart(fig_pie, use_container_width=True)
+                st.plotly_chart(fig_pie, width='stretch')
             else:
                 st.info("Sentiment data not available")
         
@@ -261,7 +261,7 @@ class Dashboard:
                     height=UI_CONSTANTS['CHART_HEIGHT']
                 )
                 fig_bar.update_layout(showlegend=False, xaxis_tickangle=-45)
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, width='stretch')
             else:
                 st.info("Category data not available")
         
@@ -285,7 +285,7 @@ class Dashboard:
                     height=UI_CONSTANTS['CHART_HEIGHT']
                 )
                 fig_lang.update_layout(showlegend=False)
-                st.plotly_chart(fig_lang, use_container_width=True)
+                st.plotly_chart(fig_lang, width='stretch')
             else:
                 st.info("Language data not available")
         
@@ -307,7 +307,7 @@ class Dashboard:
                     height=UI_CONSTANTS['CHART_HEIGHT']
                 )
                 fig_timeline.update_layout(showlegend=False)
-                st.plotly_chart(fig_timeline, use_container_width=True)
+                st.plotly_chart(fig_timeline, width='stretch')
             else:
                 st.info("Timeline data not available")
     
@@ -397,7 +397,7 @@ class Dashboard:
         # Display with pagination
         st.dataframe(
             display_df,
-            use_container_width=True,
+            width='stretch',
             height=UI_CONSTANTS['TABLE_HEIGHT']
         )
     
