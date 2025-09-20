@@ -50,7 +50,7 @@ class Dashboard:
         """Load data with caching for performance"""
         try:
             if file_path is None:
-                file_path = _self.output_path / _self.config['output_files']['csv']
+                file_path = str(_self.output_path / _self.config['output_files']['csv'])
             
             if Path(file_path).exists():
                 df = pd.read_csv(file_path, encoding='utf-8')
@@ -179,7 +179,7 @@ class Dashboard:
         
         st.markdown("---")
     
-    def render_metrics(self, df: pd.DataFrame, metadata: dict = None):
+    def render_metrics(self, df: pd.DataFrame, metadata: Optional[dict] = None):
         """Render key performance metrics"""
         if df.empty:
             st.warning("No data available for metrics")
@@ -347,7 +347,7 @@ class Dashboard:
                 "Filter by Language",
                 options=languages,
                 default=languages,
-                format_func=lambda x: lang_display.get(x, str(x))
+                format_func=lambda x: lang_display.get(x, str(x)) or str(x)
             )
             if selected_languages:
                 filtered_df = filtered_df[filtered_df[COLUMNS['LANGUAGE']].isin(selected_languages)]
