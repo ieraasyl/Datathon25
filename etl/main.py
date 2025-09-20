@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import datetime
 import uuid
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
@@ -336,11 +336,17 @@ class ETLPipeline:
         """Save pipeline execution metadata"""
         metadata_path = self.paths['output'] / self.config['output_files']['metadata']
         
+        # Ensure start_time is set
+        if self.start_time is None:
+            self.start_time = datetime.now()
+        
+        end_time = datetime.now()
+        
         pipeline_metadata = PipelineMetadata(
             pipeline_run_id=self.run_id,
             start_time=self.start_time,
-            end_time=datetime.now(),
-            processing_time_seconds=(datetime.now() - self.start_time).total_seconds(),
+            end_time=end_time,
+            processing_time_seconds=(end_time - self.start_time).total_seconds(),
             total_comments=self.metadata.get('transformation', {}).get('initial_count', 0),
             successful_merges=self.metadata.get('transformation', {}).get('final_count', 0),
             preservation_rate=self.metadata.get('transformation', {}).get('preservation_rate', 0.0),
@@ -349,13 +355,13 @@ class ETLPipeline:
                 'classified': str(self.paths['processed'] / self.config['input_files']['classified']),
                 'replies': str(self.paths['processed'] / self.config['input_files']['replies'])
             },
-            output_files=self.metadata.get('output_files', {})
+            output_files=self.metadata.get('output_files', {}) if self.metadata else {}
         )
         
         self.io_manager.save_json(pipeline_metadata.model_dump(), metadata_path)
         self.logger.info(f"Pipeline metadata saved to {metadata_path}")
     
-    def run_pipeline(self, create_sample: bool = None):
+    def run_pipeline(self, create_sample: Optional[bool] = None):
         """Run the complete ETL pipeline"""
         self.start_time = datetime.now()
         self.logger.info(f"Starting ETL Pipeline run {self.run_id}...")
