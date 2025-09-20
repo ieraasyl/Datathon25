@@ -140,9 +140,9 @@ class ETLPipeline:
         
         # Store validation results in metadata
         self.metadata['validation'] = {
-            'comments': comments_validation.dict(),
-            'classified': classified_validation.dict(),
-            'replies': replies_validation.dict()
+            'comments': comments_validation.model_dump(),
+            'classified': classified_validation.model_dump(),
+            'replies': replies_validation.model_dump()
         }
         
         # Convert to DataFrames
@@ -352,7 +352,7 @@ class ETLPipeline:
             output_files=self.metadata.get('output_files', {})
         )
         
-        self.io_manager.save_json(pipeline_metadata.dict(), metadata_path)
+        self.io_manager.save_json(pipeline_metadata.model_dump(), metadata_path)
         self.logger.info(f"Pipeline metadata saved to {metadata_path}")
     
     def run_pipeline(self, create_sample: bool = None):

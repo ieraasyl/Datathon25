@@ -4,7 +4,7 @@ Pydantic models for input validation
 Author: Yerassyl
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Union
 from datetime import datetime
 import re
@@ -16,7 +16,8 @@ class Comment(BaseModel):
     timestamp: str = Field(..., description="Comment timestamp in ISO format")
     text: str = Field(..., min_length=1, description="Comment text content")
     
-    @validator('timestamp')
+    @field_validator('timestamp')
+    @classmethod
     def validate_timestamp(cls, v):
         """Validate timestamp format"""
         try:
@@ -31,7 +32,8 @@ class Comment(BaseModel):
         except Exception:
             raise ValueError(f"Invalid timestamp: {v}")
     
-    @validator('text')
+    @field_validator('text')
+    @classmethod
     def validate_text_length(cls, v):
         """Ensure text is not just whitespace"""
         if not v.strip():
@@ -46,7 +48,8 @@ class Classified(BaseModel):
     category: str = Field(..., description="Comment category")
     sentiment: str = Field(..., description="Sentiment analysis result")
     
-    @validator('lang')
+    @field_validator('lang')
+    @classmethod
     def validate_language(cls, v):
         """Validate language code"""
         valid_langs = ['en', 'ru', 'kk', 'mixed', 'unknown', 'other']
@@ -55,7 +58,8 @@ class Classified(BaseModel):
             return 'unknown'
         return v.lower()
     
-    @validator('moderation')
+    @field_validator('moderation')
+    @classmethod
     def validate_moderation(cls, v):
         """Validate moderation status"""
         valid_statuses = ['safe', 'offensive', 'spam', 'unknown', 'flagged']
@@ -63,7 +67,8 @@ class Classified(BaseModel):
             return 'unknown'
         return v.lower()
     
-    @validator('category')
+    @field_validator('category')
+    @classmethod
     def validate_category(cls, v):
         """Validate category"""
         valid_categories = [
@@ -74,7 +79,8 @@ class Classified(BaseModel):
             return 'unknown'
         return v.lower()
     
-    @validator('sentiment')
+    @field_validator('sentiment')
+    @classmethod
     def validate_sentiment(cls, v):
         """Validate sentiment"""
         valid_sentiments = ['positive', 'negative', 'neutral', 'unknown']
@@ -87,7 +93,8 @@ class Reply(BaseModel):
     id: str = Field(..., min_length=1, description="Comment identifier matching Comment.id")
     reply: Optional[str] = Field(None, description="Generated reply text or null if no reply")
     
-    @validator('reply', pre=True)
+    @field_validator('reply', mode='before')
+    @classmethod
     def validate_reply(cls, v):
         """Handle null/empty replies"""
         if v is None or v == '' or str(v).lower() == 'null':
@@ -136,7 +143,7 @@ def validate_comments(data: List[dict]) -> ValidationResult:
     for i, item in enumerate(data):
         try:
             comment = Comment(**item)
-            valid_records.append(comment.dict())
+            valid_records.append(comment.model_dump())
         except Exception as e:
             errors.append(f"Row {i}: {str(e)}")
     
@@ -157,7 +164,7 @@ def validate_classified(data: List[dict]) -> ValidationResult:
     for i, item in enumerate(data):
         try:
             classified = Classified(**item)
-            valid_records.append(classified.dict())
+            valid_records.append(classified.model_dump())
         except Exception as e:
             errors.append(f"Row {i}: {str(e)}")
     
@@ -178,7 +185,7 @@ def validate_replies(data: List[dict]) -> ValidationResult:
     for i, item in enumerate(data):
         try:
             reply = Reply(**item)
-            valid_records.append(reply.dict())
+            valid_records.append(reply.model_dump())
         except Exception as e:
             errors.append(f"Row {i}: {str(e)}")
     
