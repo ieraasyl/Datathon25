@@ -45,7 +45,7 @@ class Dashboard:
         logger.info("Dashboard initialized")
     
     @st.cache_data(ttl=3600, show_spinner=True)
-    def load_data(_self, file_path: str = None) -> pd.DataFrame:
+    def load_data(_self, file_path: str | None = None) -> pd.DataFrame:
         """Load data with caching for performance"""
         try:
             if file_path is None:
@@ -178,7 +178,7 @@ class Dashboard:
         
         st.markdown("---")
     
-    def render_metrics(self, df: pd.DataFrame, metadata: dict = None):
+    def render_metrics(self, df: pd.DataFrame, metadata: dict | None = None):
         """Render key performance metrics"""
         if df.empty:
             st.warning("No data available for metrics")
@@ -346,7 +346,7 @@ class Dashboard:
                 "Filter by Language",
                 options=languages,
                 default=languages,
-                format_func=lambda x: lang_display.get(x, x)
+                format_func=lambda x: lang_display.get(x, x) if x is not None else 'Unknown'
             )
             if selected_languages:
                 filtered_df = filtered_df[filtered_df[COLUMNS['LANGUAGE']].isin(selected_languages)]

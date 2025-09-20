@@ -127,7 +127,7 @@ class ValidationResult(BaseModel):
     errors: List[str] = []
     warnings: List[str] = []
 
-def validate_comments(data: List[dict]) -> ValidationResult:
+def validate_comments(data: List[dict]) -> tuple[ValidationResult, List[dict]]:
     """Validate list of comments"""
     valid_records = []
     errors = []
@@ -148,7 +148,7 @@ def validate_comments(data: List[dict]) -> ValidationResult:
         warnings=warnings
     ), valid_records
 
-def validate_classified(data: List[dict]) -> ValidationResult:
+def validate_classified(data: List[dict]) -> tuple[ValidationResult, List[dict]]:
     """Validate list of classified data"""
     valid_records = []
     errors = []
@@ -169,7 +169,7 @@ def validate_classified(data: List[dict]) -> ValidationResult:
         warnings=warnings
     ), valid_records
 
-def validate_replies(data: List[dict]) -> ValidationResult:
+def validate_replies(data: List[dict]) -> tuple[ValidationResult, List[dict]]:
     """Validate list of replies"""
     valid_records = []
     errors = []

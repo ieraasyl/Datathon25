@@ -40,7 +40,7 @@ class ETLPipeline:
         
         # Pipeline metadata
         self.run_id = str(uuid.uuid4())[:8]
-        self.start_time = None
+        self.start_time = datetime.now()  # Initialize with current time
         self.metadata = {}
         
         self.logger.info(f"ETL Pipeline initialized with run ID: {self.run_id}")
@@ -355,7 +355,7 @@ class ETLPipeline:
         self.io_manager.save_json(pipeline_metadata.dict(), metadata_path)
         self.logger.info(f"Pipeline metadata saved to {metadata_path}")
     
-    def run_pipeline(self, create_sample: bool = None):
+    def run_pipeline(self, create_sample: bool | None = None):
         """Run the complete ETL pipeline"""
         self.start_time = datetime.now()
         self.logger.info(f"Starting ETL Pipeline run {self.run_id}...")
@@ -427,7 +427,7 @@ def main():
             pipeline.paths['output'] = Path(args.output_path)
         
         # Run pipeline
-        success = pipeline.run_pipeline(create_sample=create_sample)
+        success = pipeline.run_pipeline(create_sample=create_sample if create_sample is not None else False)
         
         if success:
             print("✅ ETL Pipeline completed successfully!")

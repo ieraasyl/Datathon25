@@ -61,6 +61,7 @@ MODERATION_COLORS = {
 
 # UI constants
 UI_CONSTANTS = {
+    'title': 'Social Media Analysis Dashboard',
     'MAX_TEXT_DISPLAY': 100,
     'MAX_REPLY_DISPLAY': 100,
     'PAGE_SIZE': 50,
