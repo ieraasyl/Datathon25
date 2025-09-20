@@ -91,6 +91,11 @@ def get_logger(name: str) -> logging.Logger:
     global _logger_setup
     if _logger_setup is None:
         setup_logging()
+    
+    # Safety check in case setup_logging() somehow didn't set _logger_setup
+    if _logger_setup is None:
+        raise RuntimeError("Failed to initialize logging setup")
+    
     return _logger_setup.get_logger(name)
 
 # Convenience function for timed operations
