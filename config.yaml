@@ -1,62 +1,46 @@
-# Social Media Analysis Pipeline Configuration
-# Author: Yerassyl
+# ETL Pipeline Configuration
+# Social Media Comments Analysis with Gemini AI
 
-# Data paths
+# Data paths configuration
 data:
-  base_path: "./"
+  base_path: "."
   raw_path: "data/raw"
   processed_path: "data/processed"
-  output_path: "output"
+  output_path: "data/output"
   logs_path: "logs"
 
-# Input files (from teammates)
+# Input file names (legacy compatibility)
 input_files:
-  comments: "comments.json"      # From Daulet (parser)
-  classified: "classified.json"  # From Olzhas (classifier)
-  replies: "replies.json"        # From Anuar (response generator)
+  comments: "comments.json"
+  classified: "classified.json"
+  replies: "replies.json"
 
-# Output files
+# Output file configuration
 output_files:
-  csv: "final.csv"
-  excel: "final.xlsx"
-  pdf: "final.pdf"
-  metadata: "metadata.json"
+  csv: "social_media_analysis.csv"
+  excel: "social_media_analysis.xlsx"
+  pdf: "social_media_report.pdf"
+  metadata: "pipeline_metadata.json"
+
+# Gemini AI configuration
+gemini:
+  enabled: true
+  batch_size: 50
+  delay_between_requests: 1.0
+  max_retries: 3
+  # Note: API key should be set via environment variable in production
+  # export GEMINI_API_KEY="your-api-key-here"
 
 # Pipeline settings
 pipeline:
-  create_sample_data: true
-  preservation_rate_threshold: 90.0
-  max_pdf_rows: 50
+  create_sample_data: false
+  preservation_rate_threshold: 85.0
+  max_pdf_rows: 100
   max_text_length: 100
-  retry_attempts: 3
-  retry_delay: 1.0
-
-# Dashboard settings
-dashboard:
-  title: "Social Media Comments Analysis Dashboard"
-  page_icon: "📊"
-  layout: "wide"
-  demo_mode: true
-  cache_ttl: 3600  # Cache for 1 hour
 
 # Logging configuration
 logging:
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file_handler: true
-  console_handler: true
-  max_bytes: 10485760  # 10MB
-  backup_count: 5
-
-# Data quality thresholds
-quality:
-  max_null_percentage: 50.0
-  min_text_length: 1
-  max_duplicates_percentage: 5.0
-
-# Export settings
-export:
-  csv_encoding: "utf-8"
-  excel_engine: "openpyxl"
-  pdf_pagesize: "A4"
-  include_summary: true
+  file_logging: true
+  console_logging: true

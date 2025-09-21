@@ -1,198 +1,116 @@
-#!/usr/bin/env python3
-"""
-Pydantic models for input validation
-Author: Yerassyl
-"""
-
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List, Union, Tuple
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, JSON, Text, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import re
+import os
 
-class Comment(BaseModel):
-    """Model for raw comments from parser (Daulet)"""
-    id: str = Field(..., min_length=1, description="Unique comment identifier")
-    author: Optional[str] = Field(None, description="Comment author username")
-    timestamp: str = Field(..., description="Comment timestamp in ISO format")
-    text: str = Field(..., min_length=1, description="Comment text content")
-    
-    @field_validator('timestamp')
-    @classmethod
-    def validate_timestamp(cls, v):
-        """Validate timestamp format"""
-        try:
-            # Try to parse various common timestamp formats
-            for fmt in ['%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f']:
-                try:
-                    datetime.strptime(v, fmt)
-                    return v
-                except ValueError:
-                    continue
-            raise ValueError("Invalid timestamp format")
-        except Exception:
-            raise ValueError(f"Invalid timestamp: {v}")
-    
-    @field_validator('text')
-    @classmethod
-    def validate_text_length(cls, v):
-        """Ensure text is not just whitespace"""
-        if not v.strip():
-            raise ValueError("Text cannot be empty or whitespace only")
-        return v.strip()
+Base = declarative_base()
 
-class Classified(BaseModel):
-    """Model for classified data from ML pipeline (Olzhas)"""
-    id: str = Field(..., min_length=1, description="Comment identifier matching Comment.id")
-    lang: str = Field(..., description="Detected language code")
-    moderation: str = Field(..., description="Moderation status")
-    category: str = Field(..., description="Comment category")
-    sentiment: str = Field(..., description="Sentiment analysis result")
+class RawComment(Base):
+    """Модель для сырых комментариев из соцсетей"""
+    __tablename__ = 'raw_comments'
     
-    @field_validator('lang')
-    @classmethod
-    def validate_language(cls, v):
-        """Validate language code"""
-        valid_langs = ['en', 'ru', 'kk', 'mixed', 'unknown', 'other']
-        if v.lower() not in valid_langs:
-            # Don't fail validation, just normalize
-            return 'unknown'
-        return v.lower()
+    id = Column(Integer, primary_key=True)
+    filename = Column(String(255), nullable=False)  # Источник файла
+    post_url = Column(Text, nullable=True)
+    text = Column(Text, nullable=False)
+    username = Column(String(255), nullable=True)
+    like_count = Column(Integer, default=0)
+    created_at_utc = Column(DateTime, nullable=True)
+    extracted_at = Column(DateTime, default=datetime.utcnow)
     
-    @field_validator('moderation')
-    @classmethod
-    def validate_moderation(cls, v):
-        """Validate moderation status"""
-        valid_statuses = ['safe', 'offensive', 'spam', 'unknown', 'flagged']
-        if v.lower() not in valid_statuses:
-            return 'unknown'
-        return v.lower()
-    
-    @field_validator('category')
-    @classmethod
-    def validate_category(cls, v):
-        """Validate category"""
-        valid_categories = [
-            'complaint', 'thanks', 'question', 'review', 'suggestion', 
-            'bug_report', 'feature_request', 'other', 'unknown'
-        ]
-        if v.lower() not in valid_categories:
-            return 'unknown'
-        return v.lower()
-    
-    @field_validator('sentiment')
-    @classmethod
-    def validate_sentiment(cls, v):
-        """Validate sentiment"""
-        valid_sentiments = ['positive', 'negative', 'neutral', 'unknown']
-        if v.lower() not in valid_sentiments:
-            return 'unknown'
-        return v.lower()
+    def __repr__(self):
+        return f"<RawComment(id={self.id}, username='{self.username}', text='{self.text[:50]}...')>"
 
-class Reply(BaseModel):
-    """Model for generated replies (Anuar)"""
-    id: str = Field(..., min_length=1, description="Comment identifier matching Comment.id")
-    reply: Optional[str] = Field(None, description="Generated reply text or null if no reply")
+class AnalyzedComment(Base):
+    """Модель для проанализированных комментариев"""
+    __tablename__ = 'analyzed_comments'
     
-    @field_validator('reply', mode='before')
-    @classmethod
-    def validate_reply(cls, v):
-        """Handle null/empty replies"""
-        if v is None or v == '' or str(v).lower() == 'null':
-            return None
-        return str(v).strip() if str(v).strip() else None
+    id = Column(Integer, primary_key=True)
+    raw_comment_id = Column(Integer, nullable=False)  # Ссылка на оригинальный комментарий
+    
+    # Исходные данные
+    filename = Column(String(255), nullable=False)
+    platform = Column(String(50), nullable=False)  # instagram, vk
+    brand = Column(String(50), nullable=False)  # altel, tele2
+    post_url = Column(Text)
+    text = Column(Text, nullable=False)
+    username = Column(String(255))
+    like_count = Column(Integer, default=0)
+    created_at_utc = Column(DateTime)
+    
+    # Результаты анализа
+    comment_types = Column(JSON)  # ['complaint', 'question'] etc
+    sentiment = Column(String(50))  # very_negative, negative, neutral, positive, very_positive
+    key_idea = Column(Text)
+    swear_words = Column(JSON)  # Список нецензурной лексики
+    language = Column(String(10))  # ru, kz
+    
+    # Метаданные
+    analyzed_at = Column(DateTime, default=datetime.utcnow)
+    analysis_model = Column(String(100), default='gemini-2.5-flash')
+    
+    def __repr__(self):
+        return f"<AnalyzedComment(id={self.id}, sentiment='{self.sentiment}', types={self.comment_types})>"
 
-class MergedComment(BaseModel):
-    """Model for final merged dataset"""
-    id: str
-    author: Optional[str] = None
-    timestamp: str
-    text: str
-    lang: str = 'unknown'
-    moderation: str = 'unknown'
-    category: str = 'unknown'
-    sentiment: str = 'unknown'
-    reply: Optional[str] = None
+class AnalysisStats(Base):
+    """Модель для хранения статистики анализа"""
+    __tablename__ = 'analysis_stats'
+    
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime, default=datetime.utcnow)
+    
+    # Общая статистика
+    total_comments = Column(Integer, default=0)
+    total_posts = Column(Integer, default=0)
+    
+    # Статистика по брендам
+    altel_comments = Column(Integer, default=0)
+    tele2_comments = Column(Integer, default=0)
+    
+    # Статистика по платформам
+    instagram_comments = Column(Integer, default=0)
+    vk_comments = Column(Integer, default=0)
+    
+    # Статистика по языкам
+    russian_comments = Column(Integer, default=0)
+    kazakh_comments = Column(Integer, default=0)
+    
+    # Статистика по типам
+    questions = Column(Integer, default=0)
+    complaints = Column(Integer, default=0)
+    reviews = Column(Integer, default=0)
+    thanks = Column(Integer, default=0)
+    spam = Column(Integer, default=0)
+    
+    # Статистика по настроению
+    very_negative = Column(Integer, default=0)
+    negative = Column(Integer, default=0)
+    neutral = Column(Integer, default=0)
+    positive = Column(Integer, default=0)
+    very_positive = Column(Integer, default=0)
+    
+    # Статистика по нецензурной лексике
+    comments_with_swear = Column(Integer, default=0)
+    
+    def __repr__(self):
+        return f"<AnalysisStats(date='{self.date}', total_comments={self.total_comments})>"
 
-class PipelineMetadata(BaseModel):
-    """Model for pipeline execution metadata"""
-    pipeline_run_id: str
-    start_time: datetime
-    end_time: datetime
-    processing_time_seconds: float
-    total_comments: int
-    successful_merges: int
-    preservation_rate: float
-    input_files: dict
-    output_files: dict
-    schema_version: str = "1.0"
-    
-class ValidationResult(BaseModel):
-    """Model for validation results"""
-    is_valid: bool
-    valid_records: int
-    invalid_records: int
-    errors: List[str] = []
-    warnings: List[str] = []
+# Настройка подключения к базе данных
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///comments_analysis.db')
 
-def validate_comments(data: List[dict]) -> Tuple[ValidationResult, List[dict]]:
-    """Validate list of comments"""
-    valid_records = []
-    errors = []
-    warnings = []
-    
-    for i, item in enumerate(data):
-        try:
-            comment = Comment(**item)
-            valid_records.append(comment.model_dump())
-        except Exception as e:
-            errors.append(f"Row {i}: {str(e)}")
-    
-    return ValidationResult(
-        is_valid=len(errors) == 0,
-        valid_records=len(valid_records),
-        invalid_records=len(errors),
-        errors=errors,
-        warnings=warnings
-    ), valid_records
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def validate_classified(data: List[dict]) -> Tuple[ValidationResult, List[dict]]:
-    """Validate list of classified data"""
-    valid_records = []
-    errors = []
-    warnings = []
-    
-    for i, item in enumerate(data):
-        try:
-            classified = Classified(**item)
-            valid_records.append(classified.model_dump())
-        except Exception as e:
-            errors.append(f"Row {i}: {str(e)}")
-    
-    return ValidationResult(
-        is_valid=len(errors) == 0,
-        valid_records=len(valid_records),
-        invalid_records=len(errors),
-        errors=errors,
-        warnings=warnings
-    ), valid_records
+def create_tables():
+    """Создание таблиц в базе данных"""
+    Base.metadata.create_all(bind=engine)
+    print("Таблицы созданы успешно")
 
-def validate_replies(data: List[dict]) -> Tuple[ValidationResult, List[dict]]:
-    """Validate list of replies"""
-    valid_records = []
-    errors = []
-    warnings = []
-    
-    for i, item in enumerate(data):
-        try:
-            reply = Reply(**item)
-            valid_records.append(reply.model_dump())
-        except Exception as e:
-            errors.append(f"Row {i}: {str(e)}")
-    
-    return ValidationResult(
-        is_valid=len(errors) == 0,
-        valid_records=len(valid_records),
-        invalid_records=len(errors),
-        errors=errors,
-        warnings=warnings
-    ), valid_records
+def get_db_session():
+    """Получение сессии базы данных"""
+    return SessionLocal()
+
+if __name__ == "__main__":
+    # Создаем таблицы при запуске
+    create_tables()

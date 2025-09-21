@@ -1,142 +1,104 @@
 #!/usr/bin/env python3
 """
-Constants for Social Media Analysis Pipeline
+Constants and configuration mappings for Social Media ETL Pipeline
 Author: Yerassyl
 """
 
-# Data schema constants
-REQUIRED_COMMENT_FIELDS = ['id', 'author', 'timestamp', 'text']
-REQUIRED_CLASSIFIED_FIELDS = ['id', 'lang', 'moderation', 'category', 'sentiment']
-REQUIRED_REPLY_FIELDS = ['id', 'reply']
-
-# Column names
+# Column mappings for data consistency
 COLUMNS = {
     'ID': 'id',
-    'AUTHOR': 'author',
-    'TIMESTAMP': 'timestamp',
     'TEXT': 'text',
-    'LANGUAGE': 'lang',
-    'MODERATION': 'moderation',
+    'AUTHOR': 'username',  # Updated from 'author' to 'username'
+    'TIMESTAMP': 'created_at_utc',  # Updated from 'timestamp'
+    'REPLY': 'reply',
+    'LANG': 'lang',
     'CATEGORY': 'category',
     'SENTIMENT': 'sentiment',
-    'REPLY': 'reply'
+    'MODERATION': 'moderation'
 }
 
 # Default fill values for missing data
 FILL_VALUES = {
     'lang': 'unknown',
-    'moderation': 'unknown',
+    'moderation': 'safe',
     'category': 'unknown',
-    'sentiment': 'unknown',
-    'reply': ''
+    'sentiment': 'neutral',
+    'reply': None,
+    'username': 'unknown_user',
+    'like_count': 0
 }
 
-# Sentiment values and colors
-SENTIMENTS = {
-    'positive': '#00CC96',
-    'negative': '#EF553B', 
-    'neutral': '#636EFA',
-    'unknown': '#AB63FA'
+# Valid values for categorical fields
+VALID_LANGUAGES = ['en', 'ru', 'kk', 'mixed', 'unknown', 'other']
+VALID_SENTIMENTS = ['very_negative', 'negative', 'neutral', 'positive', 'very_positive']
+VALID_CATEGORIES = ['complaint', 'thanks', 'question', 'review', 'suggestion', 'spam', 'other', 'unknown']
+VALID_MODERATION = ['safe', 'offensive', 'spam', 'unknown', 'flagged']
+
+# Gemini AI mappings
+GEMINI_TYPE_TO_CATEGORY = {
+    'complaint': 'complaint',
+    'thanks': 'thanks', 
+    'question': 'question',
+    'review': 'review',
+    'spam': 'spam'
 }
 
-# Category colors
-CATEGORY_COLORS = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3']
-
-# Language codes mapping
-LANGUAGE_MAPPING = {
-    'en': 'English',
-    'ru': 'Russian',
-    'kk': 'Kazakh',
-    'mixed': 'Mixed',
-    'unknown': 'Unknown'
+GEMINI_SENTIMENT_TO_STANDARD = {
+    'very_positive': 'positive',
+    'positive': 'positive',
+    'neutral': 'neutral',
+    'negative': 'negative',
+    'very_negative': 'negative'
 }
 
-# Moderation status colors
-MODERATION_COLORS = {
-    'safe': '#00CC96',
-    'offensive': '#EF553B',
-    'spam': '#FFA15A',
-    'unknown': '#636EFA'
-}
-
-# UI constants
-UI_CONSTANTS = {
-    'title': 'Social Media Analysis Dashboard',
-    'MAX_TEXT_DISPLAY': 100,
-    'MAX_REPLY_DISPLAY': 100,
-    'PAGE_SIZE': 50,
-    'CHART_HEIGHT': 400,
-    'TABLE_HEIGHT': 600
-}
-
-# File formats
-SUPPORTED_FORMATS = ['csv', 'xlsx', 'pdf', 'json']
-
-# Quality thresholds
-QUALITY_THRESHOLDS = {
-    'MIN_PRESERVATION_RATE': 90.0,
-    'MAX_NULL_PERCENTAGE': 50.0,
-    'MAX_DUPLICATE_PERCENTAGE': 5.0,
-    'MIN_TEXT_LENGTH': 1,
-    'MAX_PROCESSING_TIME': 300  # 5 minutes
-}
+# Social media file patterns
+SOCIAL_MEDIA_PATTERNS = [
+    'altel_*.json',
+    'tele2_*.json'
+]
 
 # Error messages
 ERROR_MESSAGES = {
-    'FILE_NOT_FOUND': "Input file not found: {file_path}",
-    'INVALID_JSON': "Invalid JSON format in file: {file_path}",
-    'SCHEMA_VALIDATION_FAILED': "Schema validation failed for {model_name}: {errors}",
-    'LOW_PRESERVATION_RATE': "Data preservation rate ({rate:.1f}%) below threshold ({threshold:.1f}%)",
-    'EXPORT_FAILED': "Failed to export {format} file: {error}",
-    'PIPELINE_FAILED': "ETL pipeline failed: {error}"
+    'PIPELINE_FAILED': "Pipeline execution failed: {error}",
+    'EXPORT_FAILED': "Failed to export {format}: {error}",
+    'LOW_PRESERVATION_RATE': "Low data preservation rate: {rate:.1f}% < {threshold}%",
+    'GEMINI_API_ERROR': "Gemini API error: {error}",
+    'FILE_NOT_FOUND': "File not found: {file_path}",
+    'VALIDATION_ERROR': "Data validation failed: {error}"
 }
 
 # Success messages
 SUCCESS_MESSAGES = {
-    'DATA_LOADED': "Successfully loaded {count} records from {file_path}",
     'PIPELINE_COMPLETED': "ETL Pipeline completed successfully in {time:.2f} seconds",
-    'FILE_EXPORTED': "{format} exported: {file_path}",
-    'VALIDATION_PASSED': "Input validation passed for {model_name}"
+    'FILE_EXPORTED': "{format} file exported successfully: {file_path}",
+    'GEMINI_ANALYSIS_COMPLETE': "Gemini analysis completed: {success_count}/{total_count} successful",
+    'DATA_EXTRACTED': "Successfully extracted {count} records from {source}",
+    'VALIDATION_PASSED': "Data validation passed: {valid_count} valid records"
 }
 
-# Log formats
-LOG_FORMATS = {
-    'SIMPLE': '%(asctime)s - %(levelname)s - %(message)s',
-    'DETAILED': '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
-    'JSON': '{"timestamp": "%(asctime)s", "logger": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
-}
-
-# Retry configuration
-RETRY_CONFIG = {
-    'MAX_ATTEMPTS': 3,
-    'BASE_DELAY': 1.0,
-    'EXPONENTIAL_BASE': 2,
-    'MAX_DELAY': 60.0
-}
-
-# Dashboard metrics
-METRIC_LABELS = {
-    'TOTAL_COMMENTS': 'Total Comments',
-    'LANGUAGES_DETECTED': 'Languages Detected', 
-    'REPLY_RATE': 'Reply Rate',
-    'POSITIVE_SENTIMENT': 'Positive Sentiment',
-    'PROCESSING_TIME': 'Processing Time',
-    'PRESERVATION_RATE': 'Data Preservation Rate'
-}
-
-# Export settings
-EXPORT_SETTINGS = {
-    'CSV': {
-        'encoding': 'utf-8',
-        'index': False
+# Configuration defaults
+DEFAULT_CONFIG = {
+    'data': {
+        'base_path': '.',
+        'raw_path': 'data/raw',
+        'processed_path': 'data/processed', 
+        'output_path': 'data/output',
+        'logs_path': 'logs'
     },
-    'EXCEL': {
-        'engine': 'openpyxl',
-        'index': False
+    'gemini': {
+        'enabled': True,
+        'batch_size': 50,
+        'delay_between_requests': 1.0,
+        'max_retries': 3
     },
-    'PDF': {
-        'pagesize': 'A4',
-        'max_rows': 50,
-        'font_size': 6
+    'pipeline': {
+        'preservation_rate_threshold': 85.0,
+        'max_pdf_rows': 100,
+        'max_text_length': 100
+    },
+    'logging': {
+        'level': 'INFO',
+        'file_logging': True,
+        'console_logging': True
     }
 }
