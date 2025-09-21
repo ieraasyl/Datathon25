@@ -7,8 +7,9 @@ import pandas as pd
 from argparse import ArgumentParser
 
 from src.moderation import moderate_df
-from src.preprocesing import Config, Preprocessor, flatten_our_json, preprocess_df
 from src.classification import classify_df
+from src.asnwer_generation import generate_answers_df
+from src.preprocesing import flatten_our_json, preprocess_df
 
 warnings.filterwarnings(
     "ignore",
@@ -42,7 +43,8 @@ if __name__ == "__main__":
     df_prep = preprocess_df(df_flat, text_col="text")  # adds text_norm, lang_primary, emojis_count...
     df_mod  = moderate_df(df_prep, text_col="text_norm", lang_col="lang_primary")
     df_cls  = classify_df(df_mod, text_col="text_norm", lang_col="lang_primary", emoji_col="emoji_sent")
+    df_gen  = generate_answers_df(df_cls, text_col="text_norm", lang_col="lang_primary")
 
     output_path = "examples/instagram_comments_20250921_003125_final.csv"
-    df_cls.to_csv(output_path, index=False, encoding="utf-8")
+    df_gen.to_csv(output_path, index=False, encoding="utf-8")
     print(f"Moderated comments saved to '{output_path}'.")

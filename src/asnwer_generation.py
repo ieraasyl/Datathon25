@@ -22,10 +22,10 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 class RAGConfig:
     kb_folder: str = "knowledge_base"
     index_cache_path: str = "data/kb_index.pkl"
-    embed_model_id: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    embed_model_id: str = "models/paraphrase-multilingual-MiniLM-L12-v2/"
     # Generation models
-    gen_model_id: str = "issai/LLama-3.1-KazLLM-1.0-8B"
-    gen_fallback_id: str = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    gen_model_id: str = "models/LLama-3.1-KazLLM-1.0-8B"
+    gen_fallback_id: str = "models/Meta-Llama-3.1-8B-Instruct"
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     # Chunking
     chunk_chars: int = 900
